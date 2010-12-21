@@ -21,7 +21,7 @@
     fd,
     tail_append_begin = 0, % 09 UPGRADE CODE
     eof = 0,
-    path = "",
+    path = ""
     }).
 
 -export([open/1, open/2, close/1, bytes/1, sync/1, append_binary/2,old_pread/3]).
@@ -516,21 +516,26 @@ load_header(Fd, Block) ->
 
 -spec read_raw_iolist_int(#file{}, Pos::non_neg_integer(), Len::non_neg_integer()) ->
     {Data::iolist(), CurPos::non_neg_integer()}.
-read_raw_iolist_int(#file{fd=Fd, tail_append_begin=TAB}, Pos, Len) ->
+read_raw_iolist_int(#file{fd=Fd, tail_append_begin=TAB, path=Path}, Pos, Len) ->
     BlockOffset = Pos rem ?SIZE_BLOCK,
     TotalBytes = calculate_total_read_len(BlockOffset, Len),
-    {ok, <<RawBin:TotalBytes/binary>>} = file:pread(Fd, Pos, TotalBytes),
-%%    try {ok, <<RawBin:TotalBytes/binary>>} = file:pread(Fd, Pos, TotalBytes)
-%%    catch {badmatch, Details}
-%%	
-%%	exception(badmatch, Details)
-%%    end,
-    if Pos >= TAB ->
-        {remove_block_prefixes(BlockOffset, RawBin), Pos + TotalBytes};
-    true ->
-        % 09 UPGRADE CODE
-        <<ReturnBin:Len/binary, _/binary>> = RawBin,
-        {[ReturnBin], Pos + Len}
+%%    {ok, <<RawBin:TotalBytes/binary>>} = file:pread(Fd, Pos, TotalBytes),
+    %% This isn't probably the most erlang way to write this; rethink...
+    case file:pread(Fd, Pos, TotalBytes) of
+	{ok, <<RawBin:TotalBytes/binary>>} -> 
+	      if Pos >= TAB ->
+		      {remove_block_prefixes(BlockOffset, RawBin), Pos + TotalBytes};
+		 true ->
+		      % 09 UPGRADE CODE
+		      <<ReturnBin:Len/binary, _/binary>> = RawBin,
+		      {[ReturnBin], Pos + Len}
+	      end;
+	{ok, BinaryData} ->   
+	    ?LOG_ERROR("Bad Size (~p) in file ~p, expected ~p", [size(BinaryData), Path, TotalBytes]),
+	    throw({badmatch, erlang:stacktrace()});
+	X ->
+	    ?LOG_ERROR("Error reading file ~p, got ~p", [Path, X]),
+	    throw({X, erlang:stacktrace()})
     end.
 
 -spec extract_md5(iolist()) -> {binary(), iolist()}.
