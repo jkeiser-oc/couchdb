@@ -20,7 +20,8 @@
 -record(file, {
     fd,
     tail_append_begin = 0, % 09 UPGRADE CODE
-    eof = 0
+    eof = 0,
+    path = "",
     }).
 
 -export([open/1, open/2, close/1, bytes/1, sync/1, append_binary/2,old_pread/3]).
@@ -266,14 +267,14 @@ init({Filepath, Options, ReturnPid, Ref}) ->
                     ok = file:truncate(Fd),
                     ok = file:sync(Fd),
                     maybe_track_open_os_files(Options),
-                    {ok, #file{fd=Fd}};
+                    {ok, #file{fd=Fd}, path=Filepath};
                 false ->
                     ok = file:close(Fd),
                     init_status_error(ReturnPid, Ref, file_exists)
                 end;
             false ->
                 maybe_track_open_os_files(Options),
-                {ok, #file{fd=Fd}}
+                {ok, #file{fd=Fd,path=Filepath}}
             end;
         Error ->
             init_status_error(ReturnPid, Ref, Error)
@@ -286,7 +287,7 @@ init({Filepath, Options, ReturnPid, Ref}) ->
             ok = file:close(Fd_Read),
             maybe_track_open_os_files(Options),
             {ok, Length} = file:position(Fd, eof),
-            {ok, #file{fd=Fd, eof=Length}};
+            {ok, #file{fd=Fd, eof=Length, path=Filepath}};
         Error ->
             init_status_error(ReturnPid, Ref, Error)
         end
@@ -519,6 +520,11 @@ read_raw_iolist_int(#file{fd=Fd, tail_append_begin=TAB}, Pos, Len) ->
     BlockOffset = Pos rem ?SIZE_BLOCK,
     TotalBytes = calculate_total_read_len(BlockOffset, Len),
     {ok, <<RawBin:TotalBytes/binary>>} = file:pread(Fd, Pos, TotalBytes),
+%%    try {ok, <<RawBin:TotalBytes/binary>>} = file:pread(Fd, Pos, TotalBytes)
+%%    catch {badmatch, Details}
+%%	
+%%	exception(badmatch, Details)
+%%    end,
     if Pos >= TAB ->
         {remove_block_prefixes(BlockOffset, RawBin), Pos + TotalBytes};
     true ->
