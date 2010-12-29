@@ -532,9 +532,11 @@ read_raw_iolist_int(#file{fd=Fd, tail_append_begin=TAB, path=Path}, Pos, Len) ->
 	      end;
 	{ok, BinaryData} ->   
 	    ?LOG_ERROR("ERROR: Bad Size (~p) in read of file ~p@~p, expected ~p", [size(BinaryData), Path, Pos, TotalBytes]),
+	    couch_stats_collector:increment({couch, crash_count_trapped}),
 	    throw({badmatch, erlang:stacktrace()});
 	X ->
 	    ?LOG_ERROR("ERROR: reading file ~p@~p, got ~p", [Path, Pos, X]),
+	    couch_stats_collector:increment({couch, crash_count_trapped}),
 	    throw({X, erlang:stacktrace()})
     end.
 
