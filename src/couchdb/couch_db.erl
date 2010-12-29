@@ -1019,9 +1019,11 @@ handle_cast(Msg, Db) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
     
-handle_info({'EXIT', _Pid, normal}, Db) ->
+handle_info({'EXIT', Pid, normal}, Db) ->
+    ?LOG_ERROR("Normal exit received for db ~s from ~p (ignored)", [Db#db.name, Pid]),		     
     {noreply, Db};
-handle_info({'EXIT', _Pid, Reason}, Server) ->
+handle_info({'EXIT', Pid, Reason}, Server) ->
+    ?LOG_ERROR("Normal exit received from server ~p from ~p (stop)", [Server, Pid]),		     
     {stop, Reason, Server};
 handle_info(Msg, Db) ->
     ?LOG_ERROR("Bad message received for db ~s: ~p", [Db#db.name, Msg]),

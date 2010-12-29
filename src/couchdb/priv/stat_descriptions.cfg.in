@@ -21,6 +21,9 @@
 {couchdb, request_time, "length of a request inside CouchDB without MochiWeb"}.
 {couchdb, crash_count, "number of times a process crashed inside CouchDB"}.
 {couchdb, crash_count_trapped, "number of times a process crashed inside CouchDB and was trapped/rethrown"}.
+{couchdb, crash_count_server, "number of times a CouchDB server process was restarted"}.
+{couchdb, crash_count_db_update, "number of times a CouchDB db_update process was restarted"}.
+{couchdb, crash_count_rep, "number of times a CouchDB rep process was restarted"}.
 {couchdb, auth_cache_hits, "number of authentication cache hits"}.
 {couchdb, auth_cache_misses, "number of authentication cache misses"}.
 
