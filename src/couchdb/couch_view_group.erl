@@ -347,7 +347,7 @@ handle_info({'EXIT', FromPid, Reason}, State) ->
     {stop, Reason, State};
 
 handle_info({'DOWN',_,_,_,_}, State) ->
-    ?LOG_INFO("Shutting down view group server, monitored db is closing.", []),
+    ?LOG_INFO("Shutting down view group server, monitored db ~p group ~p is closing.", [State#group_state.db_name, (State#group_state.group)#group.name]),
     {stop, normal, reply_all(State, shutdown)}.
 
 
