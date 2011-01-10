@@ -180,6 +180,9 @@ handle_cast({compact_done, CompactFilepath}, #db{filepath=Filepath}=Db) ->
             revs_limit = Db#db.revs_limit
         }),
 
+	{ok, #file_info{size=FilesizeOriginal}} = file:read_file_info(Filepath),
+	{ok, #file_info{size=FilesizeCompact}} = file:read_file_info(CompactFilepath),
+
         ?LOG_DEBUG("CouchDB swapping files ~s and ~s.",
                 [Filepath, CompactFilepath]),
         RootDir = couch_config:get("couchdb", "database_dir", "."),
@@ -189,7 +192,7 @@ handle_cast({compact_done, CompactFilepath}, #db{filepath=Filepath}=Db) ->
         NewDb3 = refresh_validate_doc_funs(NewDb2),
         ok = gen_server:call(Db#db.main_pid, {db_updated, NewDb3}, infinity),
         couch_db_update_notifier:notify({compacted, NewDb3#db.name}),
-        ?LOG_INFO("Compaction for db \"~s\" completed.", [Db#db.name]),
+        ?LOG_INFO("Compaction for db \"~s\" completed ~p bytes was ~p.", [Db#db.name, FilesizeCompact, FilesizeOriginal]),
         {noreply, NewDb3#db{compactor_pid=nil}};
     false ->
         ?LOG_INFO("Compaction file still behind main file "
