@@ -22,6 +22,7 @@
          terminate/2, code_change/3]).
 
 -include("couch_db.hrl").
+-include_lib("kernel/include/file.hrl").
 
 -record(group_state, {
     type,
@@ -188,9 +189,11 @@ handle_cast({compact_done, #group{current_seq=NewSeq} = NewGroup},
         ref_counter = RefCounter
     } = State,
 
-    ?LOG_INFO("View index compaction complete for ~s ~s", [DbName, GroupId]),
     FileName = index_file_name(RootDir, DbName, GroupSig),
     CompactName = index_file_name(compact, RootDir, DbName, GroupSig),
+    {ok, #file_info{size=FileSizeOriginal}} = file:read_file_info(FileName),
+    {ok, #file_info{size=FileSizeCompact}} = file:read_file_info(CompactName),
+    ?LOG_INFO("View index compaction complete for ~s ~s now ~p bytes was ~p", [DbName, GroupId,FileSizeCompact, FileSizeOriginal]),
     ok = couch_file:delete(RootDir, FileName),
     ok = file:rename(CompactName, FileName),
 
