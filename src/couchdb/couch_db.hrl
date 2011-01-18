@@ -148,7 +148,8 @@
      purge_seq = 0,
      purged_docs = nil,
      security_ptr = nil,
-     revs_limit = 1000
+     revs_limit = 1000,
+     compact_seq = 0
     }).
 
 -record(db,
@@ -173,7 +174,8 @@
     waiting_delayed_commit = nil,
     revs_limit = 1000,
     fsync_options = [],
-    is_sys_db = false
+    is_sys_db = false,
+    compact_seq = 0
     }).
 
 
@@ -230,6 +232,7 @@
     id_btree=nil,
     current_seq=0,
     purge_seq=0,
+    compact_seq=0,
     query_server=nil,
     waiting_delayed_commit=nil
     }).

@@ -253,7 +253,8 @@ get_db_info(Db) ->
         name=Name,
         fulldocinfo_by_id_btree=FullDocBtree,
         instance_start_time=StartTime,
-        committed_update_seq=CommittedUpdateSeq} = Db,
+        committed_update_seq=CommittedUpdateSeq,
+	compact_seq=CompactSeq} = Db,
     {ok, Size} = couch_file:bytes(Fd),
     {ok, {Count, DelCount}} = couch_btree:full_reduce(FullDocBtree),
     InfoList = [
@@ -263,11 +264,11 @@ get_db_info(Db) ->
         {update_seq, SeqNum},
         {purge_seq, couch_db:get_purge_seq(Db)},
         {compact_running, Compactor/=nil},
+	{compact_seq, CompactSeq},
         {disk_size, Size},
         {instance_start_time, StartTime},
         {disk_format_version, DiskVersion},
-        {committed_update_seq, CommittedUpdateSeq}
-        ],
+        {committed_update_seq, CommittedUpdateSeq}],
     {ok, InfoList}.
 
 get_design_docs(#db{fulldocinfo_by_id_btree=Btree}=Db) ->

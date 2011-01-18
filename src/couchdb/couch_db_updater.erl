@@ -177,8 +177,9 @@ handle_cast({compact_done, CompactFilepath}, #db{filepath=Filepath}=Db) ->
             main_pid = Db#db.main_pid,
             filepath = Filepath,
             instance_start_time = Db#db.instance_start_time,
-            revs_limit = Db#db.revs_limit
-        }),
+            revs_limit = Db#db.revs_limit,
+	    compact_seq = NewSeq 
+	}),
 
 	{ok, #file_info{size=FilesizeOriginal}} = file:read_file_info(Filepath),
 	{ok, #file_info{size=FilesizeCompact}} = file:read_file_info(CompactFilepath),
@@ -423,7 +424,8 @@ init_db(DbName, Filepath, Fd, Header0) ->
         security_ptr = SecurityPtr,
         instance_start_time = StartTime,
         revs_limit = Header#db_header.revs_limit,
-        fsync_options = FsyncOptions
+        fsync_options = FsyncOptions,
+	compact_seq = Header#db_header.compact_seq
         }.
 
 
@@ -689,7 +691,9 @@ db_to_header(Db, Header) ->
         fulldocinfo_by_id_btree_state = couch_btree:get_state(Db#db.fulldocinfo_by_id_btree),
         local_docs_btree_state = couch_btree:get_state(Db#db.local_docs_btree),
         security_ptr = Db#db.security_ptr,
-        revs_limit = Db#db.revs_limit}.
+        revs_limit = Db#db.revs_limit,
+	compact_seq = Db#db.compact_seq
+     }.
 
 commit_data(#db{waiting_delayed_commit=nil} = Db, true) ->
     Db#db{waiting_delayed_commit=erlang:send_after(1000,self(),delayed_commit)};
@@ -848,7 +852,7 @@ copy_compact(Db, NewDb0, Retry) ->
         NewDb4 = NewDb3
     end,
 
-    commit_data(NewDb4#db{update_seq=Db#db.update_seq}).
+    commit_data(NewDb4#db{update_seq=Db#db.update_seq, compact_seq=Db#db.update_seq}).
 
 start_copy_compact(#db{name=Name,filepath=Filepath,header=#db_header{purge_seq=PurgeSeq}}=Db) ->
     CompactFile = Filepath ++ ".compact",
