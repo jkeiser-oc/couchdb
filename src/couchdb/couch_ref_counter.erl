@@ -79,7 +79,7 @@ handle_call({drop, Pid}, _From, #srv{referrers=Referrers}=Srv) ->
         Referrers
     end,
     Srv2 = Srv#srv{referrers=Referrers2},
-    case should_close() of
+    case should_close(Referrers2) of
     true ->
         {stop,normal,ok,Srv2};
     false ->
@@ -96,7 +96,7 @@ code_change(_OldVsn, State, _Extra) ->
 handle_info({'DOWN', MonRef, _, Pid, _}, #srv{referrers=Referrers}=Srv) ->
     {ok, {MonRef, _RefCount}} = dict:find(Pid, Referrers),
     Srv2 = Srv#srv{referrers=dict:erase(Pid, Referrers)},
-    case should_close() of
+    case should_close(Referrers) of
     true ->
         {stop,normal,Srv2};
     false ->
@@ -104,8 +104,10 @@ handle_info({'DOWN', MonRef, _, Pid, _}, #srv{referrers=Referrers}=Srv) ->
     end.
 
 
-should_close() ->
-    case process_info(self(), monitors) of
-    {monitors, []} ->   true;
-    _ ->                false
+should_close(Referrers) ->
+    case dict:size(Referrers) of
+        0 ->
+            true;
+        _ ->
+            false
     end.
