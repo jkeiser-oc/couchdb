@@ -57,6 +57,8 @@ evalcx(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
         return JS_FALSE;
     }
 
+    JS_SetScriptStackQuota(subcx, 0x20000000); 
+
     SETUP_REQUEST(subcx);
 
     src = JS_GetStringChars(str);
@@ -286,6 +288,7 @@ main(int argc, const char * argv[])
     cx = JS_NewContext(rt, 8L * 1024L);
     if (!cx) return 1;
 
+    JS_SetScriptStackQuota(cx, 0x20000000); 
     JS_SetErrorReporter(cx, printerror);
     JS_ToggleOptions(cx, JSOPTION_XML);
     
